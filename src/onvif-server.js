@@ -28,6 +28,18 @@ module.exports = class OnvifServer {
         if (!this.config.hostname)
             return -1;
 
+        this.onvifVersion = {
+            Major: 2,
+            Minor: 1
+        };
+
+        this.users = [
+            {
+                Username: this.config.username || this.config.onvifUsername || 'admin',
+                UserLevel: 'Administrator'
+            }
+        ];
+
         this.videoSource = {
             attributes: {
                 token: 'video_src_token'
@@ -181,10 +193,7 @@ module.exports = class OnvifServer {
                                     SystemBackup: false,
                                     SystemLogging: false,
                                     FirmwareUpgrade: false,
-                                    SupportedVersions: {
-                                        Major: 2,
-                                        Minor: 5
-                                    },
+                                    SupportedVersions: this.onvifVersion,
                                     Extension: {
                                         HttpFirmwareUpgrade: false,
                                         HttpSystemBackup: false,
@@ -210,6 +219,7 @@ module.exports = class OnvifServer {
                                     'X.509Token': false,
                                     SAMLToken: false,
                                     KerberosToken: false,
+                                    UsernameToken: true,
                                     RELToken: false,
                                     Extension: {
                                         'TLS1.0': false,
@@ -248,20 +258,62 @@ module.exports = class OnvifServer {
                                 {
                                     Namespace: 'http://www.onvif.org/ver10/device/wsdl',
                                     XAddr: `http://${this.config.hostname}:${this.config.ports.server}/onvif/device_service`,
-                                    Version: {
-                                        Major: 2,
-                                        Minor: 5,
-                                    }
+                                    Version: this.onvifVersion
                                 },
                                 {
                                     Namespace: 'http://www.onvif.org/ver10/media/wsdl',
                                     XAddr: `http://${this.config.hostname}:${this.config.ports.server}/onvif/media_service`,
-                                    Version: {
-                                        Major: 2,
-                                        Minor: 5,
-                                    }
+                                    Version: this.onvifVersion
                                 }
                             ]
+                        };
+                    },
+
+                    GetServiceCapabilities: (args) => {
+                        return {
+                            Capabilities: {
+                                Network: {
+                                    IPFilter: false,
+                                    ZeroConfiguration: false,
+                                    IPVersion6: false,
+                                    DynDNS: false,
+                                    Dot11Configuration: false,
+                                    HostnameFromDHCP: false,
+                                    NTP: 0
+                                },
+                                Security: {
+                                    'TLS1.0': false,
+                                    'TLS1.1': false,
+                                    'TLS1.2': false,
+                                    OnboardKeyGeneration: false,
+                                    AccessPolicyConfig: false,
+                                    DefaultAccessPolicy: false,
+                                    Dot1X: false,
+                                    RemoteUserHandling: false,
+                                    'X.509Token': false,
+                                    SAMLToken: false,
+                                    KerberosToken: false,
+                                    UsernameToken: true,
+                                    HttpDigest: false,
+                                    RELToken: false,
+                                    MaxUsers: this.users.length
+                                },
+                                System: {
+                                    DiscoveryResolve: false,
+                                    DiscoveryBye: false,
+                                    RemoteDiscovery: false,
+                                    SystemBackup: false,
+                                    SystemLogging: false,
+                                    FirmwareUpgrade: false,
+                                    HttpFirmwareUpgrade: false,
+                                    HttpSystemBackup: false,
+                                    HttpSystemLogging: false,
+                                    HttpSupportInformation: false
+                                },
+                                Misc: {
+                                    AuxiliaryCommands: ''
+                                }
+                            }
                         };
                     },
 
@@ -273,6 +325,12 @@ module.exports = class OnvifServer {
                             SerialNumber: `${this.config.name.replace(' ', '_')}-0000`,
                             HardwareId: `${this.config.name.replace(' ', '_')}-1001`
                         };
+                    },
+
+                    GetUsers: (args) => {
+                        return {
+                            User: this.users
+                        };
                     }
 
                 }
@@ -280,6 +338,27 @@ module.exports = class OnvifServer {
 
             MediaService: {
                 Media: {
+                    GetServiceCapabilities: (args) => {
+                        return {
+                            Capabilities: {
+                                ProfileCapabilities: {
+                                    MaximumNumberOfProfiles: this.profiles.length
+                                },
+                                StreamingCapabilities: {
+                                    RTPMulticast: false,
+                                    RTP_TCP: true,
+                                    RTP_RTSP_TCP: true,
+                                    NonAggregateControl: false,
+                                    NoRTSPStreaming: false
+                                },
+                                SnapshotUri: true,
+                                Rotation: false,
+                                VideoSourceMode: false,
+                                OSD: false
+                            }
+                        };
+                    },
+
                     GetProfiles: (args) => {
                         return {
                             Profiles: this.profiles
@@ -429,9 +508,9 @@ module.exports = class OnvifServer {
 
                     GetSnapshotUri: (args) => {
                         let uri = `http://${this.config.hostname}:${this.config.ports.server}/snapshot.png`;
-                        if (args.ProfileToken == 'sub_stream' && this.config.lowQuality && this.config.lowQuality.snapshot)
+                        if (this.config.useTargetSnapshot && args.ProfileToken == 'sub_stream' && this.config.lowQuality && this.config.lowQuality.snapshot)
                             uri = `http://${this.config.hostname}:${this.config.ports.snapshot}${this.config.lowQuality.snapshot}`;
-                        else if (this.config.highQuality.snapshot)
+                        else if (this.config.useTargetSnapshot && this.config.highQuality.snapshot)
                             uri = `http://${this.config.hostname}:${this.config.ports.snapshot}${this.config.highQuality.snapshot}`;
 
                         return {
