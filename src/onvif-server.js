@@ -195,8 +195,15 @@ module.exports = class OnvifServer {
                         return {
                             DNSInformation: {
                                 FromDHCP: true,
-                                SearchDomain: [],
-                                DNSManual: []
+                                SearchDomain: [
+                                    'local'
+                                ],
+                                DNSManual: [
+                                    {
+                                        Type: 'IPv4',
+                                        IPv4Address: '1.1.1.1'
+                                    }
+                                ]
                             }
                         };
                     },
@@ -241,23 +248,11 @@ module.exports = class OnvifServer {
                                                     PrefixLength: 24
                                                 }
                                             ],
-                                            LinkLocal: {
-                                                Address: this.config.hostname,
-                                                PrefixLength: 24
-                                            },
                                             FromDHCP: {
                                                 Address: this.config.hostname,
                                                 PrefixLength: 24
                                             },
                                             DHCP: true
-                                        }
-                                    },
-                                    IPv6: {
-                                        Enabled: false,
-                                        Config: {
-                                            AcceptRouterAdvert: false,
-                                            DHCP: 'Off',
-                                            Manual: []
                                         }
                                     }
                                 }
