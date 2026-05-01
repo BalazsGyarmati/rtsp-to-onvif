@@ -36,86 +36,90 @@ module.exports = class OnvifServer {
             Resolution: { Width: this.config.highQuality.width, Height: this.config.highQuality.height }
         };
 
+        this.videoSourceConfigurations = [
+            {
+                Name: 'VideoSource',
+                UseCount: 2,
+                attributes: {
+                    token: 'video_src_config_token'
+                },
+                SourceToken: 'video_src_token',
+                Bounds: { attributes: { x: 0, y: 0, width: this.config.highQuality.width, height: this.config.highQuality.height } }
+            }
+        ];
+
+        this.videoEncoderConfigurations = [
+            {
+                attributes: {
+                    token: 'encoder_hq_config_token'
+                },
+                Name: 'CardinalHqCameraConfiguration',
+                UseCount: 1,
+                Encoding: 'H264',
+                Resolution: {
+                    Width: this.config.highQuality.width,
+                    Height: this.config.highQuality.height
+                },
+                Quality: this.config.highQuality.quality,
+                RateControl: {
+                    FrameRateLimit: this.config.highQuality.framerate,
+                    EncodingInterval: 1,
+                    BitrateLimit: this.config.highQuality.bitrate
+                },
+                H264: {
+                    GovLength: this.config.highQuality.framerate,
+                    H264Profile: 'Main'
+                },
+                SessionTimeout: 'PT1000S'
+            }
+        ];
+
         this.profiles = [
             {
                 Name: 'MainStream',
                 attributes: {
                     token: 'main_stream'
                 },
-                VideoSourceConfiguration: {
-                    Name: 'VideoSource',
-                    UseCount: 2,
-                    attributes: {
-                        token: 'video_src_config_token'
-                    },
-                    SourceToken: 'video_src_token',
-                    Bounds: { attributes: { x: 0, y: 0, width: this.config.highQuality.width, height: this.config.highQuality.height } }
-                },
-                VideoEncoderConfiguration: {
-                    attributes: {
-                        token: 'encoder_hq_config_token'
-                    },
-                    Name: 'CardinalHqCameraConfiguration',
-                    UseCount: 1,
-                    Encoding: 'H264',
-                    Resolution: {
-                        Width: this.config.highQuality.width,
-                        Height: this.config.highQuality.height
-                    },
-                    Quality: this.config.highQuality.quality,
-                    RateControl: {
-                        FrameRateLimit: this.config.highQuality.framerate,
-                        EncodingInterval: 1,
-                        BitrateLimit: this.config.highQuality.bitrate
-                    },
-                    H264: {
-                        GovLength: this.config.highQuality.framerate,
-                        H264Profile: 'Main'
-                    },
-                    SessionTimeout: 'PT1000S'
-                }
+                VideoSourceConfiguration: this.videoSourceConfigurations[0],
+                VideoEncoderConfiguration: this.videoEncoderConfigurations[0]
             }
         ];
 
         if (this.config.lowQuality) {
+            this.videoEncoderConfigurations.push(
+                {
+                    attributes: {
+                        token: 'encoder_lq_config_token'
+                    },
+                    Name: 'CardinalLqCameraConfiguration',
+                    UseCount: 1,
+                    Encoding: 'H264',
+                    Resolution: {
+                        Width: this.config.lowQuality.width,
+                        Height: this.config.lowQuality.height
+                    },
+                    Quality: this.config.lowQuality.quality,
+                    RateControl: {
+                        FrameRateLimit: this.config.lowQuality.framerate,
+                        EncodingInterval: 1,
+                        BitrateLimit: this.config.lowQuality.bitrate
+                    },
+                    H264: {
+                        GovLength: this.config.lowQuality.framerate,
+                        H264Profile: 'Main'
+                    },
+                    SessionTimeout: 'PT1000S'
+                }
+            );
+
             this.profiles.push(
                 {
                     Name: 'SubStream',
                     attributes: {
                         token: 'sub_stream'
                     },
-                    VideoSourceConfiguration: {
-                        Name: 'VideoSource',
-                        UseCount: 2,
-                        attributes: {
-                            token: 'video_src_config_token'
-                        },
-                        SourceToken: 'video_src_token',
-                        Bounds: { attributes: { x: 0, y: 0, width: this.config.highQuality.width, height: this.config.highQuality.height } }
-                    },
-                    VideoEncoderConfiguration: {
-                        attributes: {
-                            token: 'encoder_lq_config_token'
-                        },
-                        Name: 'CardinalLqCameraConfiguration',
-                        UseCount: 1,
-                        Encoding: 'H264',
-                        Resolution: {
-                            Width: this.config.lowQuality.width,
-                            Height: this.config.lowQuality.height
-                        },
-                        Quality: this.config.lowQuality.quality,
-                        RateControl: {
-                            FrameRateLimit: this.config.lowQuality.framerate,
-                            EncodingInterval: 1,
-                            BitrateLimit: this.config.lowQuality.bitrate
-                        },
-                        H264: {
-                            GovLength: this.config.lowQuality.framerate,
-                            H264Profile: 'Main'
-                        },
-                        SessionTimeout: 'PT1000S'
-                    }
+                    VideoSourceConfiguration: this.videoSourceConfigurations[0],
+                    VideoEncoderConfiguration: this.videoEncoderConfigurations[1]
                 }
             );
         }
@@ -287,6 +291,67 @@ module.exports = class OnvifServer {
                             VideoSources: [
                                 this.videoSource
                             ]
+                        };
+                    },
+
+                    GetVideoSourceConfigurations: (args) => {
+                        return {
+                            Configurations: this.videoSourceConfigurations
+                        };
+                    },
+
+                    GetVideoSourceConfiguration: (args) => {
+                        let configuration = this.videoSourceConfigurations.find((item) => item.attributes.token == args.ConfigurationToken);
+
+                        return {
+                            Configuration: configuration || this.videoSourceConfigurations[0]
+                        };
+                    },
+
+                    GetVideoEncoderConfigurations: (args) => {
+                        return {
+                            Configurations: this.videoEncoderConfigurations
+                        };
+                    },
+
+                    GetVideoEncoderConfiguration: (args) => {
+                        let configuration = this.videoEncoderConfigurations.find((item) => item.attributes.token == args.ConfigurationToken);
+
+                        return {
+                            Configuration: configuration || this.videoEncoderConfigurations[0]
+                        };
+                    },
+
+                    GetVideoEncoderConfigurationOptions: (args) => {
+                        let configuration = this.videoEncoderConfigurations.find((item) => item.attributes.token == args.ConfigurationToken) || this.videoEncoderConfigurations[0];
+
+                        return {
+                            Options: {
+                                QualityRange: {
+                                    Min: 1,
+                                    Max: 10
+                                },
+                                H264: {
+                                    ResolutionsAvailable: [
+                                        configuration.Resolution
+                                    ],
+                                    GovLengthRange: {
+                                        Min: configuration.H264.GovLength,
+                                        Max: configuration.H264.GovLength
+                                    },
+                                    FrameRateRange: {
+                                        Min: configuration.RateControl.FrameRateLimit,
+                                        Max: configuration.RateControl.FrameRateLimit
+                                    },
+                                    EncodingIntervalRange: {
+                                        Min: configuration.RateControl.EncodingInterval,
+                                        Max: configuration.RateControl.EncodingInterval
+                                    },
+                                    H264ProfilesSupported: [
+                                        configuration.H264.H264Profile
+                                    ]
+                                }
+                            }
                         };
                     },
 
