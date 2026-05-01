@@ -51,7 +51,7 @@ module.exports = class OnvifServer {
         this.videoSourceConfigurations = [
             {
                 Name: 'VideoSource',
-                UseCount: 2,
+                UseCount: this.config.lowQuality ? 2 : 1,
                 attributes: {
                     token: 'video_src_config_token'
                 },
@@ -65,7 +65,7 @@ module.exports = class OnvifServer {
                 attributes: {
                     token: 'encoder_hq_config_token'
                 },
-                Name: 'CardinalHqCameraConfiguration',
+                Name: 'MainVideoEncoderConfiguration',
                 UseCount: 1,
                 Encoding: 'H264',
                 Resolution: {
@@ -103,7 +103,7 @@ module.exports = class OnvifServer {
                     attributes: {
                         token: 'encoder_lq_config_token'
                     },
-                    Name: 'CardinalLqCameraConfiguration',
+                    Name: 'SubVideoEncoderConfiguration',
                     UseCount: 1,
                     Encoding: 'H264',
                     Resolution: {
@@ -742,12 +742,22 @@ module.exports = class OnvifServer {
     }
 
     enableDebugOutput() {
+        const getPeer = (req) => {
+            const socket = req && (req.socket || req.connection);
+            if (!socket)
+                return 'unknown';
+
+            const remote = `${socket.remoteAddress || 'unknown'}:${socket.remotePort || 'unknown'}`;
+            const local = `${socket.localAddress || 'unknown'}:${socket.localPort || 'unknown'}`;
+            return `${remote} -> ${local}`;
+        };
+
         this.deviceService.log = function(type, data, req){
-            console.debug(`SERVER: ${data}`);
+            console.debug(`SERVER: ${type} ${getPeer(req)} ${data}`);
             //there is no logger in this context
         };
         this.mediaService.log = function(type, data, req){
-            console.debug(`SERVER: ${data}`);
+            console.debug(`SERVER: ${type} ${getPeer(req)} ${data}`);
             //there is no logger in this context
         };
         // this.deviceService.on('request', (request, methodName) => {
@@ -812,7 +822,8 @@ module.exports = class OnvifServer {
 
                     this.discoveryMessageNo++;
                     let responseBuffer = Buffer.from(response);
-                    return dgram.createSocket('udp4').send(responseBuffer, 0, responseBuffer.length, remote.port, remote.address);
+                    this.logger.debug(`SERVER: ${this.config.name} - Discovery response to ${remote.address}:${remote.port}`);
+                    return this.discoverySocket.send(responseBuffer, 0, responseBuffer.length, remote.port, remote.address);
                 }
             });
         });
