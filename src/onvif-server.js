@@ -168,6 +168,133 @@ module.exports = class OnvifServer {
                         };
                     },
 
+                    GetScopes: (args) => {
+                        return {
+                            Scopes: [
+                                {
+                                    ScopeDef: 'Fixed',
+                                    ScopeItem: 'onvif://www.onvif.org/type/video_encoder'
+                                },
+                                {
+                                    ScopeDef: 'Fixed',
+                                    ScopeItem: 'onvif://www.onvif.org/hardware/onvif'
+                                },
+                                {
+                                    ScopeDef: 'Configurable',
+                                    ScopeItem: `onvif://www.onvif.org/name/${this.config.name}`
+                                },
+                                {
+                                    ScopeDef: 'Configurable',
+                                    ScopeItem: 'onvif://www.onvif.org/location/'
+                                }
+                            ]
+                        };
+                    },
+
+                    GetDNS: (args) => {
+                        return {
+                            DNSInformation: {
+                                FromDHCP: true,
+                                SearchDomain: [],
+                                DNSManual: []
+                            }
+                        };
+                    },
+
+                    GetHostname: (args) => {
+                        return {
+                            HostnameInformation: {
+                                FromDHCP: true,
+                                Name: this.config.name
+                            }
+                        };
+                    },
+
+                    GetNetworkDefaultGateway: (args) => {
+                        return {
+                            NetworkGateway: {
+                                IPv4Address: [],
+                                IPv6Address: []
+                            }
+                        };
+                    },
+
+                    GetNetworkInterfaces: (args) => {
+                        return {
+                            NetworkInterfaces: [
+                                {
+                                    attributes: {
+                                        token: 'eth0'
+                                    },
+                                    Enabled: true,
+                                    Info: {
+                                        Name: 'eth0',
+                                        HwAddress: this.config.mac,
+                                        MTU: 1500
+                                    },
+                                    IPv4: {
+                                        Enabled: true,
+                                        Config: {
+                                            Manual: [
+                                                {
+                                                    Address: this.config.hostname,
+                                                    PrefixLength: 24
+                                                }
+                                            ],
+                                            LinkLocal: {
+                                                Address: this.config.hostname,
+                                                PrefixLength: 24
+                                            },
+                                            FromDHCP: {
+                                                Address: this.config.hostname,
+                                                PrefixLength: 24
+                                            },
+                                            DHCP: true
+                                        }
+                                    },
+                                    IPv6: {
+                                        Enabled: false,
+                                        Config: {
+                                            AcceptRouterAdvert: false,
+                                            DHCP: 'Off',
+                                            Manual: []
+                                        }
+                                    }
+                                }
+                            ]
+                        };
+                    },
+
+                    GetNetworkProtocols: (args) => {
+                        return {
+                            NetworkProtocols: [
+                                {
+                                    Name: 'HTTP',
+                                    Enabled: true,
+                                    Port: [
+                                        this.config.ports.server
+                                    ]
+                                },
+                                {
+                                    Name: 'RTSP',
+                                    Enabled: true,
+                                    Port: [
+                                        this.config.ports.rtsp
+                                    ]
+                                }
+                            ]
+                        };
+                    },
+
+                    GetNTP: (args) => {
+                        return {
+                            NTPInformation: {
+                                FromDHCP: true,
+                                NTPManual: []
+                            }
+                        };
+                    },
+
                     GetCapabilities: (args) => {
                         let response = {
                             Capabilities: {}
