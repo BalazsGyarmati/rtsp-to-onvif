@@ -68,7 +68,7 @@ module.exports = class OnvifServer {
                 },
                 H264: {
                     GovLength: this.config.highQuality.framerate,
-                    H264Profile: 'Main'
+                    H264Profile: this.config.highQuality.h264Profile || 'Baseline'
                 },
                 SessionTimeout: 'PT1000S'
             }
@@ -106,7 +106,7 @@ module.exports = class OnvifServer {
                     },
                     H264: {
                         GovLength: this.config.lowQuality.framerate,
-                        H264Profile: 'Main'
+                        H264Profile: this.config.lowQuality.h264Profile || this.config.highQuality.h264Profile || 'Baseline'
                     },
                     SessionTimeout: 'PT1000S'
                 }
@@ -286,6 +286,14 @@ module.exports = class OnvifServer {
                         };
                     },
 
+                    GetProfile: (args) => {
+                        let profile = this.profiles.find((item) => item.attributes.token == args.ProfileToken);
+
+                        return {
+                            Profile: profile || this.profiles[0]
+                        };
+                    },
+
                     GetVideoSources: (args) => {
                         return {
                             VideoSources: [
@@ -305,6 +313,34 @@ module.exports = class OnvifServer {
 
                         return {
                             Configuration: configuration || this.videoSourceConfigurations[0]
+                        };
+                    },
+
+                    GetVideoSourceConfigurationOptions: (args) => {
+                        return {
+                            Options: {
+                                BoundsRange: {
+                                    XRange: {
+                                        Min: 0,
+                                        Max: 0
+                                    },
+                                    YRange: {
+                                        Min: 0,
+                                        Max: 0
+                                    },
+                                    WidthRange: {
+                                        Min: this.config.highQuality.width,
+                                        Max: this.config.highQuality.width
+                                    },
+                                    HeightRange: {
+                                        Min: this.config.highQuality.height,
+                                        Max: this.config.highQuality.height
+                                    }
+                                },
+                                VideoSourceTokensAvailable: [
+                                    this.videoSource.attributes.token
+                                ]
+                            }
                         };
                     },
 
@@ -352,6 +388,42 @@ module.exports = class OnvifServer {
                                     ]
                                 }
                             }
+                        };
+                    },
+
+                    GetCompatibleVideoEncoderConfigurations: (args) => {
+                        return {
+                            Configurations: this.videoEncoderConfigurations
+                        };
+                    },
+
+                    GetGuaranteedNumberOfVideoEncoderInstances: (args) => {
+                        return {
+                            TotalNumber: this.videoEncoderConfigurations.length
+                        };
+                    },
+
+                    GetAudioSources: (args) => {
+                        return {
+                            AudioSources: []
+                        };
+                    },
+
+                    GetAudioEncoderConfigurations: (args) => {
+                        return {
+                            Configurations: []
+                        };
+                    },
+
+                    GetCompatibleAudioEncoderConfigurations: (args) => {
+                        return {
+                            Configurations: []
+                        };
+                    },
+
+                    GetMetadataConfigurations: (args) => {
+                        return {
+                            Configurations: []
                         };
                     },
 
@@ -485,7 +557,6 @@ module.exports = class OnvifServer {
                                         <d:Types>dn:NetworkVideoTransmitter</d:Types>
                                         <d:Scopes>
                                             onvif://www.onvif.org/type/video_encoder
-                                            onvif://www.onvif.org/type/ptz
                                             onvif://www.onvif.org/hardware/onvif
                                             onvif://www.onvif.org/name/${this.config.name}
                                             onvif://www.onvif.org/location/
