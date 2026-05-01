@@ -253,19 +253,60 @@ module.exports = class OnvifServer {
                     },
 
                     GetServices: (args) => {
-                        return {
-                            Service: [
-                                {
-                                    Namespace: 'http://www.onvif.org/ver10/device/wsdl',
-                                    XAddr: `http://${this.config.hostname}:${this.config.ports.server}/onvif/device_service`,
-                                    Version: this.onvifVersion
+                        let services = [
+                            {
+                                Namespace: 'http://www.onvif.org/ver10/device/wsdl',
+                                XAddr: `http://${this.config.hostname}:${this.config.ports.server}/onvif/device_service`,
+                                Version: this.onvifVersion
+                            },
+                            {
+                                Namespace: 'http://www.onvif.org/ver10/media/wsdl',
+                                XAddr: `http://${this.config.hostname}:${this.config.ports.server}/onvif/media_service`,
+                                Version: this.onvifVersion
+                            }
+                        ];
+
+                        if (args.IncludeCapability) {
+                            services[0].Capabilities = {
+                                Network: {
+                                    IPFilter: false,
+                                    ZeroConfiguration: false,
+                                    IPVersion6: false,
+                                    DynDNS: false,
+                                    Dot11Configuration: false
                                 },
-                                {
-                                    Namespace: 'http://www.onvif.org/ver10/media/wsdl',
-                                    XAddr: `http://${this.config.hostname}:${this.config.ports.server}/onvif/media_service`,
-                                    Version: this.onvifVersion
+                                Security: {
+                                    UsernameToken: true,
+                                    HttpDigest: false,
+                                    'TLS1.0': false,
+                                    'TLS1.1': false,
+                                    'TLS1.2': false,
+                                    MaxUsers: this.users.length
+                                },
+                                System: {
+                                    DiscoveryResolve: false,
+                                    DiscoveryBye: false,
+                                    RemoteDiscovery: false,
+                                    FirmwareUpgrade: false,
+                                    SystemBackup: false,
+                                    SystemLogging: false
                                 }
-                            ]
+                            };
+                            services[1].Capabilities = {
+                                ProfileCapabilities: {
+                                    MaximumNumberOfProfiles: this.profiles.length
+                                },
+                                StreamingCapabilities: {
+                                    RTPMulticast: false,
+                                    RTP_TCP: true,
+                                    RTP_RTSP_TCP: true
+                                },
+                                SnapshotUri: true
+                            };
+                        }
+
+                        return {
+                            Service: services
                         };
                     },
 
