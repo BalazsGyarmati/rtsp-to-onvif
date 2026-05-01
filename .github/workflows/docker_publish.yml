@@ -18,16 +18,12 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          version: "lab:latest"
-          driver: cloud
-          endpoint: "gybc/rtsp-to-onvif"
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
-          tags: "gybc/rtsp-to-onvif.${{Github.run_number}},gybc/rtsp-to-onvif:latest"
-          # For pull requests, export results to the build cache.
-          # Otherwise, push to a registry.
-          outputs: ${{ github.event_name == 'pull_request' && 'type=cacheonly' || 'type=registry,push=true' }}
+          push: true
+          tags: |
+            gybc/rtsp-to-onvif:${{ github.run_number }}
+            gybc/rtsp-to-onvif:latest
   
